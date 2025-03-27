@@ -1,0 +1,31 @@
+{
+  "name": "viu-amplify",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "description": "A simple viu extension to improve your streaming experience",
+  "action": {
+    "default_title": "Viu Amplify",
+    "default_popup": "src/popup/index.html",
+    "default_icon": "src/static/logo.png"
+  },
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "webRequest",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": ["https://www.viu.com/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.viu.com/*"],
+      "js": ["src/functions/volume-handler.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ]
+}
