@@ -92,6 +92,10 @@ chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
   }
 });
 
+/**
+ * Used to handle communications between the popup script and the content script
+ * This is used to change the playback speed of the video
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "change-playback-speed") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
