@@ -68,4 +68,12 @@ export default {
     },
     extensions: [".ts", ".tsx"],
   },
+  stats: {
+    all: false, // Disable all logs
+    errors: true, // Show errors only
+    warnings: true, // Show warnings only
+    timings: true, // Show build timings
+    assets: true, // Show output assets
+    builtAt: true, // Show build timestamp
+  },
 };

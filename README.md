@@ -1,4 +1,4 @@
-# Viu Amplify - Chrome Extension
+# VAmplify - Chrome Extension
 
 ![Amplify Logo](src/static/logo.png)
 
@@ -16,7 +16,7 @@ A simple Chrome extension that enhances your viewing experience on Viu.com by ad
 1. Clone this repository:
 
    ```sh
-   git clone https://github.com/your-repo/viu-amplify.git
+   git clone https://github.com/drxc00/viu-amplify
    cd viu-amplify
    ```
 

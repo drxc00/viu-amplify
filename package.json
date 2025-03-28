@@ -1,5 +1,5 @@
 {
-  "name": "viu-amplify",
+  "name": "vamplify",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -13,14 +13,14 @@
   "homepage": "",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/drxc00/viu-amplify.git"
   },
   "bugs": "",
   "keywords": [],
   "author": {
-    "name": "",
-    "email": "",
-    "url": ""
+    "name": "drxc00",
+    "email": "npdvillanueva@gmail.com",
+    "url": "https://drxco.dev"
   },
   "contributors": [],
   "scripts": {
