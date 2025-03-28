@@ -2,13 +2,13 @@ import { Volume2, PlayCircle } from "lucide-react";
 
 const featuresList = [
   {
-    icon: <Volume2 className="w-4 h-4 text-amber-500" />,
+    icon: <Volume2 className="w-4 h-4 text-amber-300" />,
     title: "Persistent Volume",
     description:
       "Remember your preferred volume across different videos and sessions.",
   },
   {
-    icon: <PlayCircle className="w-4 h-4 text-amber-500" />,
+    icon: <PlayCircle className="w-4 h-4 text-amber-300" />,
     title: "Playback Speed Control",
     description:
       "Customize your viewing experience with multiple playback speed options from 1x to 2x.",
@@ -23,8 +23,8 @@ export function Features() {
           <div
             key={index}
             className="
-              bg-zinc-900 p-4 rounded-lg flex items-center 
-              space-x-4 border border-zinc-800 hover:border-amber-500 
+              bg-zinc-900 p-2 rounded-lg flex items-center 
+              space-x-4 border border-zinc-800 hover:border-amber-300 
               transition-all duration-300
             "
           >
@@ -37,11 +37,11 @@ export function Features() {
             </div>
           </div>
         ))}
-      </div>
-      <div className="mt-6 text-center">
-        <p className="text-zinc-500 italic mb-4">
-          More features coming soon...
-        </p>
+        <div className="mt-6 text-center">
+          <p className="text-zinc-500 italic mb-4">
+            More features coming soon...
+          </p>
+        </div>
       </div>
     </div>
   );

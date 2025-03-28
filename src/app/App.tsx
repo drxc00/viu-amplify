@@ -1,16 +1,11 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { PlaybackOptions } from "./playback-options";
-import { Features } from "./features";
-import { FileWarningIcon } from "lucide-react";
+import { Button } from "./components/ui/button";
+import { PlaybackOptions } from "./components/playback-options";
+import { Features } from "./components/features";
 
 type Pages = "playback" | "home" | "features" | "invalid" | string;
 
 const pages = [
-  {
-    label: "Home",
-    value: "home",
-  },
   {
     label: "Playback Options",
     value: "playback",
@@ -37,26 +32,21 @@ export default function App() {
 
   if (currentPage === "invalid") {
     return (
-      <main className="bg-zinc-950 w-[200px] h-[200px] p-4 flex flex-col items-center justify-center">
-        <FileWarningIcon className="w-8 h-8 text-amber-500" />
-        <h1 className="text-amber-500 text-xl font-bold mb-2">
-          Viu Amplify Error
-        </h1>
+      <main className="bg-zinc-950 w-[200px] h-[100px] p-4 flex flex-col items-center justify-center">
+        <h1 className="text-amber-300 text-xl font-bold mb-2">VAmplify Error</h1>
         <p className="text-zinc-300 text-center">
-          You are not watching on Viu. Please visit Viu.com to use Viu Amplify
+          Unsupported site. Please visit viu.com
         </p>
       </main>
     );
   }
 
   return (
-    <main className="bg-zinc-950 w-[400px] h-[300px] p-4 flex flex-col">
+    <main className="bg-zinc-950 w-[250px] h-[400px] p-4 flex flex-col">
       {currentPage === "home" && (
         <>
           <div className="flex flex-col items-center justify-center mb-6">
-            <h1 className="text-amber-500 text-2xl font-bold mb-2">
-              Viu Amplify
-            </h1>
+            <h1 className="text-amber-300 text-2xl font-bold mb-2">VAmplify</h1>
             <p className="text-zinc-300 text-center">
               Amplify your Viu streaming experience with quality of life
               features.
@@ -71,7 +61,7 @@ export default function App() {
                 w-full py-3 text-md font-semibold rounded-lg transition-all duration-200
                 ${
                   page.value === currentPage
-                    ? "bg-amber-600 text-zinc-950"
+                    ? "bg-amber-300 text-zinc-950"
                     : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white"
                 }
               `}

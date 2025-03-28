@@ -62,7 +62,7 @@ export function PlaybackOptions() {
               px-3 py-1 text-sm rounded-full transition-all duration-200
               ${
                 selectedSpeed === option.value
-                  ? "bg-amber-500 text-black"
+                  ? "bg-amber-300 text-black"
                   : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }
             `}
