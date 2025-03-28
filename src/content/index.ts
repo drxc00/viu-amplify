@@ -12,9 +12,9 @@
    * We initialize the volume on the video element
    * Takes a video element and applies volume persistence
    */
-  const initializeVolume = (video) => {
+  const initializeVolume = (video: HTMLVideoElement) => {
     const volumePersist =
-      parseInt(localStorage.getItem("viu_volume")) / 100 || 0.5;
+      parseInt(localStorage.getItem("viu_volume") || "50") / 100 || 0.5;
 
     /**
      * Safe volume calculation
@@ -56,7 +56,7 @@
     if (volumeBar) {
       window.volumeBarObserver = new MutationObserver(() => {
         const volumeLevel =
-          parseInt(volumeBar.getAttribute("aria-valuenow")) || 100;
+          parseInt(volumeBar.getAttribute("aria-valuenow") || "100") || 100;
         localStorage.setItem("viu_volume", volumeLevel.toString());
       });
 
@@ -82,9 +82,9 @@
      * If a video is loaded and found, we initialize the volume
      */
     const observer = new MutationObserver(() => {
-      const video =
+      const video: HTMLVideoElement =
         document.querySelector("#bitmovinplayer-video-null") ||
-        document.querySelector("#bitmovinplayer-video");
+        (document.querySelector("#bitmovinplayer-video") as HTMLVideoElement);
 
       if (video) {
         observer.disconnect(); // Stop observing once found
@@ -101,8 +101,11 @@
 
   /**
    * Listen to messages from the service worker
-   * Basically a listener for when the page is rendered
-   * Since VIU is a SPA, we need to listen to this message
+   * Every this helps with the communication between the actual pop up and the content script
+   *
+   * What this listens to:
+   * 1. PAGE RENDERS (page-rendered): This is sent when the page is fully rendered
+   * 2. PLAYBACK REQUEST CHANGE (change-playback-speed): This is sent when the user changes the playback speed
    */
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (
@@ -110,9 +113,17 @@
       VOD_PATTERN.test(window.location.href)
     ) {
       restoreVolume();
-      sendResponse({});
+      sendResponse({ success: true });
+    } else if (
+      request.type === "change-playback-speed" &&
+      VOD_PATTERN.test(window.location.href)
+    ) {
+      const video = document.querySelector("video");
+      if (video) video.playbackRate = request.speed;
+      sendResponse({ success: true });
     }
   });
+
   document.addEventListener("DOMContentLoaded", () => {
     if (VOD_PATTERN.test(window.location.href)) {
       // Initial restoration attempt
@@ -123,8 +134,11 @@
   /**
    * Restore volume on page reload
    * This is done to ensure that the volume is restored when the user refreshes the page
+   * Reason: When the user refreshes the page on a VOD page, the volume state is lost. As such, we need to restore it
    */
   window.location.reload = () => {
-    restoreVolume();
+    if (VOD_PATTERN.test(window.location.href)) {
+      restoreVolume();
+    }
   };
 })();
