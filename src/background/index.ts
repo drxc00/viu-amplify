@@ -4,18 +4,18 @@
  * As such we need some custom implementations
  *
  * Credits to for the inspiration: https://medium.com/@softvar/making-chrome-extension-smart-by-supporting-spa-websites-1f76593637e8
- * ? STATUS: Unstable but working
+ * ? STATUS: a bit Unstable but working
  */
 
-let tabId, currentUrl; // Declare globally
+let tabId: number, currentUrl: string; // Declare globally
 
 /**
  * Debounce utility to prevent rapid, repeated message sending
  * Since we are sending messages to the content script, we need to debounce it
  */
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
+function debounce(func: Function, wait: number) {
+  let timeout: NodeJS.Timeout;
+  return function executedFunction<T extends any[]>(...args: T) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
@@ -29,7 +29,7 @@ function debounce(func, wait) {
  * Send a message to the content script when the page is rendered
  * This function is reused when the URL changes
  */
-const sendPageRenderedMessage = debounce((tabId) => {
+const sendPageRenderedMessage = debounce((tabId: number) => {
   try {
     chrome.tabs.sendMessage(tabId, { type: "page-rendered" }, (response) => {
       if (chrome.runtime.lastError) {
@@ -87,27 +87,7 @@ chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
   if (details.url.includes("/vod/")) {
     chrome.scripting.executeScript({
       target: { tabId: details.tabId },
-      files: ["src/functions/volume-handler.js"],
-    });
-  }
-});
-
-/**
- * Used to handle communications between the popup script and the content script
- * This is used to change the playback speed of the video
- */
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "change-playback-speed") {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length === 0) return;
-      chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: (speed) => {
-          const video = document.querySelector("video");
-          if (video) video.playbackRate = speed;
-        },
-        args: [request.speed],
-      });
+      files: ["background.js"],
     });
   }
 });
