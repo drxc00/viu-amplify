@@ -11,6 +11,7 @@ A simple Chrome extension that enhances your viewing experience on Viu.com by ad
 - **Persistent Volume Control** - Remembers your preferred volume level across videos and sessions (no more deafening 100% volume starts!).
 - **Playback Speed Options** - Adds additional playback speed controls (1x, 1.25x, 1.5x, 1.75x, 2x) beyond Viu's default options.
 - **Picture in Picture Mode** - Adds ability to enable Picture in Picture Mode. `NOTE: Subtitles do not inherently work with PiP`. 
+- **Subtitle Options** - Adds additional subtitle options like colors and size. More in the future.
 
 ## Installation
 
