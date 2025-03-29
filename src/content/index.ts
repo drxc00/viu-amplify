@@ -214,6 +214,62 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     }
   }
 
+  function changeSubtitleColor(color: string) {
+    const subtitlesContainer = document.querySelector(
+      ".bmpui-ui-viu-subtitle-overlay"
+    ) as HTMLDivElement;
+
+    if (subtitlesContainer) {
+      // Function to apply color to all span elements
+      const applyColor = () => {
+        subtitlesContainer.querySelectorAll("span").forEach((span) => {
+          span.style.color = color == "default" ? "" : color;
+        });
+      };
+
+      // Apply color immediately to existing subtitles
+      applyColor();
+
+      // Observe for new subtitle changes
+      const observer = new MutationObserver(() => {
+        applyColor();
+      });
+
+      observer.observe(subtitlesContainer, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
+  function changeSubtitleSize(size: string) {
+    const subtitlesContainer = document.querySelector(
+      ".bmpui-ui-viu-subtitle-overlay"
+    ) as HTMLDivElement;
+
+    if (subtitlesContainer) {
+      // Function to apply color to all span elements
+      const applySize = () => {
+        subtitlesContainer.querySelectorAll("span").forEach((span) => {
+          span.style.fontSize = size == "default" ? "" : size;
+        });
+      };
+
+      // Apply color immediately to existing subtitles
+      applySize();
+
+      // Observe for new subtitle changes
+      const observer = new MutationObserver(() => {
+        applySize();
+      });
+
+      observer.observe(subtitlesContainer, {
+        childList: true,
+        subtree: true,
+      });
+    }
+  }
+
   /**--------------------------------------------------------------------------------- */
 
   /** INVOKATIONS */
@@ -225,7 +281,7 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     if (request.type === "page-rendered") {
       // Clean up previous handlers.
       cleanup();
-      
+
       // Reinitialize the volume handler for the new page.
       if (isVODPage()) {
         watchVideoAndVolumeElements();
@@ -249,6 +305,12 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
        */
       const video = document.querySelector("video");
       if (video) video.requestPictureInPicture();
+      sendResponse({ success: true });
+    } else if (request.type === "change-subtitle-color" && isVODPage()) {
+      changeSubtitleColor(request.color);
+      sendResponse({ success: true });
+    } else if (request.type === "change-subtitle-size" && isVODPage()) {
+      changeSubtitleSize(request.size);
       sendResponse({ success: true });
     }
   });
