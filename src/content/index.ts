@@ -3,10 +3,10 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
 (function () {
   /** IIFE */
   /**
-   * This is the main function that handles the volume persistence
+   * This is the main function that handles the volume persistence.
    * It listens to the video element and applies volume persistence
-   * This is done by saving the value in local storage
-   * This script is injected on VOD pages which overrides the default volume (100 max)
+   * by saving the value in local storage.
+   * This script is injected on VOD pages which overrides the default volume (100 max).
    */
 
   /** Global observer for page changes */
@@ -22,24 +22,30 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
   /** Global observer for volume bar changes */
   let volumeBarObserver: MutationObserver | null = null;
 
-  /**
-   * Observe volume bar changes to persist user preferences
-   * This is done by listening to the aria-valuenow attribute
-   * Of the volume bar element
-   * We use a mutation observer to listen to these changes
-   */
+  /** Fallback interval ID for polling video element changes */
+  let fallbackIntervalId: number | null = null;
+
   function setupVolumeBarObserver() {
+    /**
+     * Observe volume bar changes to persist user preferences.
+     * This is done by listening to the aria-valuenow attribute
+     * of the volume bar element using a mutation observer.
+     */
     const volumeBar = document.querySelector("#volume_bar");
     if (volumeBar && !volumeBar.hasAttribute("volume-observer-attached")) {
-      /** Mark this element as having an observer to avoid duplicate observers */
+      // Mark this element as having an observer to avoid duplicate observers.
       volumeBar.setAttribute("volume-observer-attached", "true");
-
+      // Observe the volume bar for changes.
       volumeBarObserver = new MutationObserver(() => {
-        const volumeLevel =
-          parseInt(volumeBar.getAttribute("aria-valuenow") || "100") || 100;
-        saveVolume(volumeLevel);
+        const volumeBarAriaValue = volumeBar.getAttribute("aria-valuenow");
+        if (volumeBarAriaValue) {
+          const volume = parseFloat(volumeBarAriaValue);
+          if (!isNaN(volume)) {
+            saveVolume(volume);
+          }
+        }
       });
-
+      // Observe the volume bar for attribute changes.
       volumeBarObserver.observe(volumeBar, {
         attributes: true,
         attributeFilter: ["aria-valuenow"],
@@ -47,151 +53,177 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     }
   }
 
-  /**
-   * We initialize the volume on the video element
-   * Takes a video element and applies volume persistence
-   *
-   * Morever, this function also listens to the volume bar changes
-   * This is done by listening to the aria-valuenow attribute
-   * Of the volume bar element
-   * We use a mutation observer to listen to these changes
-   * This is done to ensure that the volume is persisted
-   * This is done by saving the value in local storage
-   */
   function initializeVolume(video: HTMLVideoElement) {
     /**
-     * Safe volume calculation
-     * It takes the current volume and ensures it is within a certain threshold
-     * If it is not within the threshold, it sets the volume to the persisted value
+     * Initialize the volume on the video element.
+     * Applies persisted volume and re-applies it when needed.
      */
     const setSafeVolume = () => {
+      /**
+       * Safe volume calculation.
+       * Retrieve the persisted volume and ensure it is within a valid range (0 to 1).
+       * If valid, apply it to the video element.
+       */
       const volumePersist = getPersistedVolume();
-      if (Math.abs(video.volume - volumePersist) > 0.01) {
+      if (
+        typeof volumePersist === "number" &&
+        volumePersist >= 0 &&
+        volumePersist <= 1
+      ) {
         video.volume = volumePersist;
       }
     };
 
-    /** Apply the persisted volume */
+    // Immediately apply persisted volume.
     setSafeVolume();
 
-    /**
-     * Ensure volume is reset when the video source changes
-     * Somewhat forces the volume to be reset based on the persisted value
-     */
+    // Reapply volume when media is ready.
     video.addEventListener("loadedmetadata", setSafeVolume);
     video.addEventListener("canplay", setSafeVolume);
+    video.addEventListener("playing", setSafeVolume);
 
-    /** Observe source changes due to dynamic loading */
+    // Observe source changes in case the video element is reused.
     const srcObserver = new MutationObserver(() => {
-      setTimeout(setSafeVolume, 300);
+      setSafeVolume();
     });
     srcObserver.observe(video, { attributes: true, attributeFilter: ["src"] });
 
-    /** Add video observer to the list for cleanup */
+    // Record the observers and event listeners for cleanup.
     videoObservers.push({
       observer: srcObserver,
       element: video,
       eventListeners: {
         loadedmetadata: setSafeVolume,
         canplay: setSafeVolume,
+        playing: setSafeVolume,
       },
     });
-
-    /** Listen to volume bar changes */
-    setupVolumeBarObserver();
   }
 
   function watchVideoAndVolumeElements() {
     /**
-     * Observer for when the video element appears
-     * We use a mutation observer to listen to these changes
-     * If a video is loaded and found, we initialize the volume
+     * Observe for video element insertions.
+     * Uses both a mutation observer and a fallback polling mechanism to catch
+     * cases when a new video (like the actual content video replacing an initial warning)
+     * is dynamically loaded.
      */
+    // Mutation observer to catch DOM changes.
     pageObserver = new MutationObserver(() => {
-      const video: HTMLVideoElement =
-        document.querySelector("#bitmovinplayer-video-null") ||
-        (document.querySelector("#bitmovinplayer-video") as HTMLVideoElement);
-
-      if (video && !video.hasAttribute("volume-handler-attached")) {
-        /**
-         * We check if the video element has the attribute volume-handler-attached
-         * This is to ensure that we do not attach the volume handler multiple times
-         */
-        video.setAttribute("volume-handler-attached", "true");
-        initializeVolume(video);
-      }
-
-      /** We then always check for volume bar changes */
-      setupVolumeBarObserver();
+      attachVolumeHandlerIfNeeded();
     });
 
-    /**
-     * NOTE: We use document body not document or the video element because we want to observe the entire document
-     * Since the VIU dynmically loads the video, we need to observe the entire document when a video element is loaded.
-     */
+    setupVolumeBarObserver();
+
+    // Observe the entire document for added/removed nodes.
     pageObserver.observe(document.body, {
       childList: true,
       subtree: true,
-      attributeFilter: ["aria-valuenow"],
     });
+
+    // Fallback: poll every second to catch video changes that might be missed.
+    if (!fallbackIntervalId) {
+      /**
+       * The reason for this is that since VIU is built with nextjs,
+       * I.e. react, the video element is not always present in the DOM
+       * and is dynamically added/removed.
+       * This is a workaround to ensure that we can still persist the volume
+       * even if the video element is not present in the DOM.
+       * This is not the best solution, but it works for now.
+       * This is a fallback to ensure that we can still persist the volume
+       */
+      fallbackIntervalId = window.setInterval(() => {
+        attachVolumeHandlerIfNeeded();
+      }, 1000);
+    }
   }
 
-  /**
-   * Cleanup function to remove all observers and event listeners
-   * This is done to ensure that we do not have multiple observers and event listeners
-   * This is important because the video element may be removed and added again
-   * And we do not want to have multiple observers and event listeners
-   */
+  function attachVolumeHandlerIfNeeded() {
+    /**
+     * Check for video elements using multiple selectors.
+     * If a video element is found and doesn't have our volume handler attached,
+     * initialize its volume persistence.
+     */
+    const videoSelectors = [
+      "#bitmovinplayer-video-null",
+      "#bitmovinplayer-video",
+      "video",
+    ];
+    for (const selector of videoSelectors) {
+      const videos = document.querySelectorAll(
+        selector
+      ) as NodeListOf<HTMLVideoElement>;
+      videos.forEach((video) => {
+        if (video && !video.hasAttribute("volume-handler-attached")) {
+          video.setAttribute("volume-handler-attached", "true");
+          initializeVolume(video);
+        }
+      });
+    }
+  }
+
   function cleanup() {
-    // Disconnect page observer
+    /**
+     * Cleanup all observers and event listeners.
+     * This is important when the video element might be removed and added again.
+     * This is important to avoid memory leaks and unnecessary processing.
+     */
+
+    // Disconnect the page observer to stop observing DOM changes.
     if (pageObserver) {
       pageObserver.disconnect();
       pageObserver = null;
     }
 
-    // Disconnect volume bar observer
+    // Disconnect the volume bar observer if it exists.
     if (volumeBarObserver) {
       volumeBarObserver.disconnect();
       volumeBarObserver = null;
     }
 
-    // Clean up video-specific observers and event listeners
-    videoObservers.forEach(({ observer, element, eventListeners }) => {
-      observer.disconnect();
+    // Clear the fallback interval if it exists.
+    if (fallbackIntervalId) {
+      clearInterval(fallbackIntervalId);
+      fallbackIntervalId = null;
+    }
 
-      // Remove event listeners
+    videoObservers.forEach(({ observer, element, eventListeners }) => {
+      /**
+       * Disconnect each video observer and remove event listeners.
+       */
+      observer.disconnect();
       if (element && eventListeners) {
         for (const [event, handler] of Object.entries(eventListeners)) {
           element.removeEventListener(event, handler);
         }
       }
-
-      // Remove attributes
       if (element) {
         element.removeAttribute("volume-handler-attached");
       }
     });
 
+    // Clear the video observers array.
     videoObservers = [];
 
-    // Clean up volume bar attribute
+    /**
+     * Remove the volume observer attribute from the volume bar.
+     * This is important to avoid duplicate observers.
+     */
     const volumeBar = document.querySelector("#volume_bar");
     if (volumeBar) {
       volumeBar.removeAttribute("volume-observer-attached");
     }
   }
 
-  /**
-   * Listen to messages from the service worker
-   * Every this helps with the communication between the actual pop up and the content script
-   *
-   * What this listens to:
-   * 1. PAGE RENDERS (page-rendered): This is sent when the page is fully rendered
-   * 2. PLAYBACK REQUEST CHANGE (change-playback-speed): This is sent when the user changes the playback speed
-   */
+  /**--------------------------------------------------------------------------------- */
+
+  /** INVOKATIONS */
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    /**
+     * Listen to messages from the service worker.
+     * Handles page renders and playback speed changes.
+     */
     if (request.type === "page-rendered") {
-      // Clean up previous handlers
+      // Clean up previous handlers.
       cleanup();
 
       if (isVODPage()) {
@@ -205,31 +237,12 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     }
   });
 
-  /**
-   * This is the initial restoration attempt
-   * This is done to ensure that the volume is restored when the user first loads the page
-   * Reason: When the user first loads the page on a VOD page, the volume state is lost. As such, we need to restore it
-   * This is done by listening to the DOMContentLoaded event
-   * This event is fired when the initial HTML document has been completely loaded and parsed
-   * without waiting for stylesheets, images, and subframes to finish loading
-   * This is important because the video element may not be available yet
-   * So we need to wait for the DOM to be fully loaded before we can access it
-   */
   document.addEventListener("DOMContentLoaded", () => {
+    /**
+     * Initial restoration attempt to ensure volume is restored when the page loads.
+     */
     if (isVODPage()) {
-      // Initial restoration attempt
       watchVideoAndVolumeElements();
     }
   });
-
-  /**
-   * Restore volume on page reload
-   * This is done to ensure that the volume is restored when the user refreshes the page
-   * Reason: When the user refreshes the page on a VOD page, the volume state is lost. As such, we need to restore it
-   */
-  window.location.reload = () => {
-    if (isVODPage()) {
-      watchVideoAndVolumeElements();
-    }
-  };
 })();
