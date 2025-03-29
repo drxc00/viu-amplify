@@ -225,14 +225,30 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     if (request.type === "page-rendered") {
       // Clean up previous handlers.
       cleanup();
-
+      
+      // Reinitialize the volume handler for the new page.
       if (isVODPage()) {
         watchVideoAndVolumeElements();
         sendResponse({ success: true });
       }
     } else if (request.type === "change-playback-speed" && isVODPage()) {
+      /**
+       * Change the playback speed of the video element.
+       * Simply uses the playbackRate property of the video element.
+       * This is done by sending a message from the popup to the content script.
+       */
       const video = document.querySelector("video");
       if (video) video.playbackRate = request.speed;
+      sendResponse({ success: true });
+    } else if (request.type === "enable-pip" && isVODPage()) {
+      /**
+       * Enable Picture-in-Picture mode for the video element.
+       * This is done by requesting Picture-in-Picture on the video element.
+       * NOTE: Subtitles are not supported in Picture-in-Picture mode.
+       * This is a limitation of the Picture-in-Picture API.
+       */
+      const video = document.querySelector("video");
+      if (video) video.requestPictureInPicture();
       sendResponse({ success: true });
     }
   });
