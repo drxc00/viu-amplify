@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { Layout } from "./layout";
+import { twMerge } from "tailwind-merge";
 
 const options = [
   {
@@ -25,7 +27,9 @@ const options = [
 ];
 
 export function PlaybackOptions() {
-  const [selectedSpeed, setSelectedSpeed] = useState(1);
+  const [selectedSpeed, setSelectedSpeed] = useState(
+    parseFloat(localStorage.getItem("playbackSpeed") || "1")
+  );
 
   const changeSpeed = (speed: number) => {
     /**
@@ -42,15 +46,18 @@ export function PlaybackOptions() {
           console.log("Response from content script:", response);
         }
       );
+
+      // Save to popup state
+      localStorage.setItem("playbackSpeed", speed.toString());
     });
   };
 
   return (
-    <div className="bg-zinc-900 p-4 rounded-lg text-white">
-      <h2 className="text-sm font-semibold mb-3 text-zinc-300">
+    <Layout className="w-[200px]">
+      <h2 className="text-xl text-center font-semibold text-primary">
         Playback Speed
       </h2>
-      <div className="flex flex-wrap justify-center gap-2 pb-2">
+      <div className="w-full flex flex-col justify-center gap-2 p-4 bg-foreground/10 rounded-lg border border-foreground/40">
         {options.map((option) => (
           <Button
             key={option.value}
@@ -58,19 +65,17 @@ export function PlaybackOptions() {
               setSelectedSpeed(option.value);
               changeSpeed(option.value);
             }}
-            className={`
-              px-3 py-1 text-sm rounded-full transition-all duration-200
-              ${
-                selectedSpeed === option.value
-                  ? "bg-amber-300 text-black"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }
-            `}
+            className={twMerge(
+              "px-3 py-1 text-sm rounded-full transition-all duration-200",
+              selectedSpeed === option.value
+                ? "bg-primary text-background"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            )}
           >
             {option.label}
           </Button>
         ))}
       </div>
-    </div>
+    </Layout>
   );
 }
