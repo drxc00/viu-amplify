@@ -59,14 +59,13 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
    * This is done by saving the value in local storage
    */
   function initializeVolume(video: HTMLVideoElement) {
-    const volumePersist = getPersistedVolume();
-
     /**
      * Safe volume calculation
      * It takes the current volume and ensures it is within a certain threshold
      * If it is not within the threshold, it sets the volume to the persisted value
      */
     const setSafeVolume = () => {
+      const volumePersist = getPersistedVolume();
       if (Math.abs(video.volume - volumePersist) > 0.01) {
         video.volume = volumePersist;
       }
