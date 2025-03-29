@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlaybackOptions } from "./components/playback-options";
+import { VODOptions } from "./components/vod-options";
 import { Error } from "./components/error";
 import { Layout } from "./components/layout";
 
@@ -23,7 +23,7 @@ export default function App() {
   });
 
   if (currentPage === "invalid") return <Error />;
-  if (currentPage === "vodOptions") return <PlaybackOptions />;
+  if (currentPage === "vodOptions") return <VODOptions />;
 
   /** Default page */
   return (
