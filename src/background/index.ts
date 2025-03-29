@@ -74,22 +74,4 @@
       sendPageRenderedMessage(tabId);
     }
   });
-
-  /**
-   * Preload the content script on VOD pages
-   * This will help when the user freshly visits the site and the script is not injected yet
-   * During development, I have noticed that when the script is not loaded since we haven't visited any VOD pages
-   * It does not apply the volume persistence.
-   * After testing it is proven to be cuased by the content script being loaded only when the user visits a VOD page with a hard refresh
-   * Given that the application is created using react (next), its SPAs' behavior causes the script to not load when doing client redirects to VOD
-   * As such we perform a pre-load of the script on VOD pages
-   */
-  chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
-    if (details.url.includes("/vod/")) {
-      chrome.scripting.executeScript({
-        target: { tabId: details.tabId },
-        files: ["background.js"],
-      });
-    }
-  });
 })();
