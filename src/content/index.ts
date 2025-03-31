@@ -22,9 +22,6 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
   /** Global observer for volume bar changes */
   let volumeBarObserver: MutationObserver | null = null;
 
-  /** Fallback interval ID for polling video element changes */
-  let fallbackIntervalId: number | null = null;
-
   function setupVolumeBarObserver() {
     /**
      * Observe volume bar changes to persist user preferences.
@@ -119,22 +116,6 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
       childList: true,
       subtree: true,
     });
-
-    // Fallback: poll every second to catch video changes that might be missed.
-    if (!fallbackIntervalId) {
-      /**
-       * The reason for this is that since VIU is built with nextjs,
-       * I.e. react, the video element is not always present in the DOM
-       * and is dynamically added/removed.
-       * This is a workaround to ensure that we can still persist the volume
-       * even if the video element is not present in the DOM.
-       * This is not the best solution, but it works for now.
-       * This is a fallback to ensure that we can still persist the volume
-       */
-      fallbackIntervalId = window.setInterval(() => {
-        attachVolumeHandlerIfNeeded();
-      }, 1000);
-    }
   }
 
   function attachVolumeHandlerIfNeeded() {
@@ -153,6 +134,7 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
         selector
       ) as NodeListOf<HTMLVideoElement>;
       videos.forEach((video) => {
+        console.log("A video mutation occured");
         if (video && !video.hasAttribute("volume-handler-attached")) {
           video.setAttribute("volume-handler-attached", "true");
           initializeVolume(video);
@@ -178,12 +160,6 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
     if (volumeBarObserver) {
       volumeBarObserver.disconnect();
       volumeBarObserver = null;
-    }
-
-    // Clear the fallback interval if it exists.
-    if (fallbackIntervalId) {
-      clearInterval(fallbackIntervalId);
-      fallbackIntervalId = null;
     }
 
     videoObservers.forEach(({ observer, element, eventListeners }) => {
@@ -215,6 +191,12 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
   }
 
   function changeSubtitleColor(color: string) {
+    /**
+     * Change the color of the subtitles.
+     * This is done by applying a color to all span elements
+     * inside the subtitle container.
+     * The color is applied using inline styles.
+     */
     const subtitlesContainer = document.querySelector(
       ".bmpui-ui-viu-subtitle-overlay"
     ) as HTMLDivElement;
@@ -243,6 +225,13 @@ import { isVODPage, getPersistedVolume, saveVolume } from "./utils";
   }
 
   function changeSubtitleSize(size: string) {
+    /**
+     * Change the size of the subtitles.
+     * This is done by applying a font size to all span elements
+     * inside the subtitle container.
+     * The size is applied using inline styles.
+     * The size is a string that can be "default", "small", "medium", or "large".
+     */
     const subtitlesContainer = document.querySelector(
       ".bmpui-ui-viu-subtitle-overlay"
     ) as HTMLDivElement;
