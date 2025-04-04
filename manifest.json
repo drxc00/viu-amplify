@@ -9,11 +9,9 @@
     "default_icon": "logo.png"
   },
   "permissions": [
-    "storage",
     "webNavigation",
     "webRequest",
-    "tabs",
-    "scripting"
+    "tabs"
   ],
   "host_permissions": ["https://www.viu.com/*"],
   "background": {
