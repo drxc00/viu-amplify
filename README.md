@@ -4,6 +4,8 @@
 
 A simple Chrome extension that enhances your viewing experience on Viu.com by adding missing features and quality-of-life improvements. This extension is built using **Manifest V3**, **React**, and **TypeScript**.
 
+Check it out! [Chrome Web Store](https://chromewebstore.google.com/detail/vamplify/oaojjkjbmdiboncmijnifkddbokhejai)
+
 ## Features
 
 ### Current Features
